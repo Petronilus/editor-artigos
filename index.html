@@ -1,0 +1,29 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Artigos</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Editor de Artigos</h1>
+        <div class="editor">
+            <input type="text" id="titulo" placeholder="Título do artigo">
+            <div id="conteudo"></div>
+            <div class="botoes">
+                <button onclick="adicionarElemento('paragrafo')">Adicionar Parágrafo</button>
+                <button onclick="adicionarElemento('subparagrafo')">Adicionar Subparágrafo</button>
+                <button onclick="salvarArtigo()">Salvar Artigo</button>
+            </div>
+        </div>
+        <div id="visualizacao">
+            <h2>Visualização</h2>
+            <div id="artigo"></div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
