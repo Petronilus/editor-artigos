@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Artigos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            min-height: 80vh;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        button.secondary {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        button.secondary:hover {
+            background-color: #e0e0e0;
+        }
+
+        .blocks-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .block {
+            display: flex;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+            background-color: white;
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+
+        .block:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .block.dragging {
+            opacity: 0.8;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            border: 1px dashed #4CAF50;
+        }
+
+        .block-content {
+            flex-grow: 1;
+            display: flex;
+        }
+
+        .block textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 12px;
+            border: none;
+            resize: vertical;
+            outline: none;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .block-controls {
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid #eee;
+            background-color: #f9f9f9;
+        }
+
+        .block-control {
+            padding: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #666;
+            transition: background-color 0.2s;
+        }
+
+        .block-control:hover {
+            background-color: #ececec;
+            color: #333;
+        }
+
+        .block-control.move-up, .block-control.move-down {
+            padding: 10px 8px;
+        }
+
+        .block-control.remove {
+            color: #e74c3c;
+        }
+
+        .block-control.remove:hover {
+            background-color: #ffebee;
+        }
+
+        footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .save-status {
+            display: inline-block;
+            margin-left: 10px;
+            font-size: 14px;
+            color: #888;
+            transition: opacity 0.5s;
+            opacity: 0;
+        }
+
+        .save-status.visible {
+            opacity: 1;
+        }
+        
+        .text-preview-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .text-preview-modal.visible {
+            display: flex;
+            opacity: 1;
+        }
+        
+        .text-preview-content {
+            background-color: white;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 800px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        .text-preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background-color: #f8f8f8;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .text-preview-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .text-preview-close {
+            cursor: pointer;
+            font-size: 22px;
+            color: #666;
+            transition: color 0.2s;
+        }
+        
+        .text-preview-close:hover {
+            color: #e74c3c;
+        }
+        
+        .text-preview-body {
+            padding: 20px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        
+        .text-preview-text {
+            line-height: 1.6;
+            font-size: 16px;
+            white-space: pre-wrap;
+        }
+        
+        .text-preview-actions {
+            padding: 15px 20px;
+            background-color: #f8f8f8;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .drag-placeholder {
+            height: 100px;
+            border: 2px dashed #4CAF50;
+            border-radius: 4px;
+            margin: 10px 0;
+            background-color: #f0f8ee;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+            
+            button {
+                padding: 6px 10px;
+                font-size: 13px;
+            }
+            
+            .block textarea {
+                font-size: 14px;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Editor de Artigos</h1>
+            <p class="subtitle">Crie seu artigo em blocos que podem ser reorganizados facilmente</p>
+        </header>
+        
+        <!-- Modal para visualização do texto completo -->
+        <div class="text-preview-modal" id="text-preview-modal">
+            <div class="text-preview-content">
+                <div class="text-preview-header">
+                    <div class="text-preview-title">Texto Completo</div>
+                    <div class="text-preview-close" id="text-preview-close">×</div>
+                </div>
+                <div class="text-preview-body">
+                    <div class="text-preview-text" id="text-preview-text"></div>
+                </div>
+                <div class="text-preview-actions">
+                    <button id="copy-text" class="secondary">Copiar Texto</button>
+                    <button id="close-preview">Fechar</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="toolbar">
+            <button id="add-block">Adicionar Parágrafo</button>
+            <button id="clear-all" class="secondary">Limpar Tudo</button>
+            <button id="save-manual" class="secondary">Salvar Agora</button>
+            <button id="view-text" class="secondary">Visualizar Texto Completo</button>
+            <span class="save-status" id="save-status">Salvo!</span>
+        </div>
+        
+        <div class="blocks-container" id="blocks-container">
+            <!-- Blocos de texto serão adicionados aqui dinamicamente -->
+        </div>
+        
+        <footer>
+            <p>Seu conteúdo é salvo automaticamente no navegador.</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const blocksContainer = document.getElementById('blocks-container');
+            const addBlockButton = document.getElementById('add-block');
+            const clearAllButton = document.getElementById('clear-all');
+            const saveManualButton = document.getElementById('save-manual');
+            const saveStatus = document.getElementById('save-status');
+            const viewTextButton = document.getElementById('view-text');
+            const textPreviewModal = document.getElementById('text-preview-modal');
+            const textPreviewText = document.getElementById('text-preview-text');
+            const closePreviewBtn = document.getElementById('close-preview');
+            const textPreviewCloseBtn = document.getElementById('text-preview-close');
+            const copyTextBtn = document.getElementById('copy-text');
+            
+            let blocks = [];
+            let draggedBlock = null;
+            let draggedBlockIndex = null;
+            let dragPlaceholder = null;
+            let saveTimeout = null;
+            
+            // Carregar blocos salvos do localStorage
+            function loadBlocks() {
+                const savedBlocks = localStorage.getItem('article-blocks');
+                if (savedBlocks) {
+                    try {
+                        blocks = JSON.parse(savedBlocks);
+                        blocks.forEach(blockText => {
+                            createBlock(blockText);
+                        });
+                    } catch (e) {
+                        console.error('Erro ao carregar blocos salvos:', e);
+                    }
+                }
+                
+                // Se não houver blocos salvos, criar um bloco vazio
+                if (blocks.length === 0) {
+                    createBlock('');
+                }
+            }
+            
+            // Salvar blocos no localStorage
+            function saveBlocks() {
+                const textBlocks = [];
+                document.querySelectorAll('.block textarea').forEach(textarea => {
+                    textBlocks.push(textarea.value);
+                });
+                
+                blocks = textBlocks;
+                localStorage.setItem('article-blocks', JSON.stringify(blocks));
+                
+                // Mostrar indicador de salvamento
+                saveStatus.classList.add('visible');
+                setTimeout(() => {
+                    saveStatus.classList.remove('visible');
+                }, 2000);
+            }
+            
+            // Salvar com debounce (atraso)
+            function debouncedSave() {
+                if (saveTimeout) {
+                    clearTimeout(saveTimeout);
+                }
+                
+                saveTimeout = setTimeout(() => {
+                    saveBlocks();
+                }, 1000);
+            }
+            
+            // Criar um novo bloco de texto
+            function createBlock(text = '') {
+                const block = document.createElement('div');
+                block.className = 'block';
+                block.draggable = true;
+                
+                block.innerHTML = `
+                    <div class="block-content">
+                        <textarea placeholder="Digite seu texto aqui...">${text}</textarea>
+                    </div>
+                    <div class="block-controls">
+                        <div class="block-control move-up" title="Mover para cima">▲</div>
+                        <div class="block-control move-down" title="Mover para baixo">▼</div>
+                        <div class="block-control remove" title="Remover bloco">×</div>
+                    </div>
+                `;
+                
+                // Event listeners para os controles do bloco
+                block.querySelector('.move-up').addEventListener('click', () => moveBlockUp(block));
+                block.querySelector('.move-down').addEventListener('click', () => moveBlockDown(block));
+                block.querySelector('.remove').addEventListener('click', () => removeBlock(block));
+                
+                // Event listener para salvar quando o texto mudar
+                block.querySelector('textarea').addEventListener('input', debouncedSave);
+                
+                // Event listeners para drag and drop
+                block.addEventListener('dragstart', handleDragStart);
+                block.addEventListener('dragend', handleDragEnd);
+                
+                blocksContainer.appendChild(block);
+                return block;
+            }
+            
+            // Mover bloco para cima
+            function moveBlockUp(block) {
+                const prevBlock = block.previousElementSibling;
+                if (prevBlock) {
+                    blocksContainer.insertBefore(block, prevBlock);
+                    debouncedSave();
+                }
+            }
+            
+            // Mover bloco para baixo
+            function moveBlockDown(block) {
+                const nextBlock = block.nextElementSibling;
+                if (nextBlock) {
+                    blocksContainer.insertBefore(nextBlock, block);
+                    debouncedSave();
+                }
+            }
+            
+            // Remover bloco
+            function removeBlock(block) {
+                if (document.querySelectorAll('.block').length > 1) {
+                    block.remove();
+                    debouncedSave();
+                } else {
+                    // Se for o último bloco, apenas limpar o texto
+                    block.querySelector('textarea').value = '';
+                    debouncedSave();
+                }
+            }
+            
+            // Handlers para drag and drop
+            function handleDragStart(e) {
+                draggedBlock = this;
+                draggedBlockIndex = Array.from(blocksContainer.children).indexOf(this);
+                this.classList.add('dragging');
+                
+                // Criar placeholder
+                dragPlaceholder = document.createElement('div');
+                dragPlaceholder.className = 'drag-placeholder';
+                
+                // Configurar data transfer para drag
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', this.outerHTML);
+                
+                // Adicionar listeners para drop nos outros blocos
+                document.querySelectorAll('.block').forEach(block => {
+                    if (block !== draggedBlock) {
+                        block.addEventListener('dragover', handleDragOver);
+                        block.addEventListener('dragenter', handleDragEnter);
+                        block.addEventListener('dragleave', handleDragLeave);
+                        block.addEventListener('drop', handleDrop);
+                    }
+                });
+                
+                // Adicionar listener para drop no container
+                blocksContainer.addEventListener('dragover', handleContainerDragOver);
+                blocksContainer.addEventListener('drop', handleContainerDrop);
+            }
+            
+            function handleDragEnd() {
+                this.classList.remove('dragging');
+                
+                // Remover o placeholder se existir
+                if (dragPlaceholder && dragPlaceholder.parentNode) {
+                    dragPlaceholder.remove();
+                }
+                
+                // Remover listeners de drag
+                document.querySelectorAll('.block').forEach(block => {
+                    block.removeEventListener('dragover', handleDragOver);
+                    block.removeEventListener('dragenter', handleDragEnter);
+                    block.removeEventListener('dragleave', handleDragLeave);
+                    block.removeEventListener('drop', handleDrop);
+                });
+                
+                blocksContainer.removeEventListener('dragover', handleContainerDragOver);
+                blocksContainer.removeEventListener('drop', handleContainerDrop);
+                
+                draggedBlock = null;
+                draggedBlockIndex = null;
+                debouncedSave();
+            }
+            
+            function handleDragOver(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+            }
+            
+            function handleDragEnter(e) {
+                e.preventDefault();
+                const targetBlock = this;
+                
+                // Não fazer nada se for o próprio bloco arrastado
+                if (targetBlock === draggedBlock) return;
+                
+                const targetIndex = Array.from(blocksContainer.children).indexOf(targetBlock);
+                const isAfter = targetIndex > draggedBlockIndex;
+                
+                // Posicionar o placeholder antes ou depois do bloco alvo
+                if (isAfter) {
+                    blocksContainer.insertBefore(dragPlaceholder, targetBlock.nextSibling);
+                } else {
+                    blocksContainer.insertBefore(dragPlaceholder, targetBlock);
+                }
+            }
+            
+            function handleDragLeave() {
+                // Não remover o placeholder aqui para evitar flickering
+            }
+            
+            function handleDrop(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const targetBlock = this;
+                
+                // Não fazer nada se for o próprio bloco arrastado
+                if (targetBlock === draggedBlock) return;
+                
+                const targetIndex = Array.from(blocksContainer.children).indexOf(targetBlock);
+                const isAfter = targetIndex > draggedBlockIndex;
+                
+                // Posicionar o bloco arrastado antes ou depois do bloco alvo
+                if (isAfter) {
+                    blocksContainer.insertBefore(draggedBlock, targetBlock.nextSibling);
+                } else {
+                    blocksContainer.insertBefore(draggedBlock, targetBlock);
+                }
+                
+                // Remover o placeholder
+                if (dragPlaceholder && dragPlaceholder.parentNode) {
+                    dragPlaceholder.remove();
+                }
+                
+                debouncedSave();
+            }
+            
+            function handleContainerDragOver(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                
+                // Verificar se o mouse está na parte inferior do container
+                const containerRect = blocksContainer.getBoundingClientRect();
+                const mouseY = e.clientY;
+                
+                if (mouseY > containerRect.bottom - 50) {
+                    // Se o placeholder não estiver no final, mova-o
+                    if (dragPlaceholder.parentElement) {
+                        dragPlaceholder.remove();
+                    }
+                    blocksContainer.appendChild(dragPlaceholder);
+                }
+            }
+            
+            function handleContainerDrop(e) {
+                e.preventDefault();
+                
+                // Se o drop for no container, mover para o final
+                if (e.target === blocksContainer || e.target === dragPlaceholder) {
+                    blocksContainer.appendChild(draggedBlock);
+                    if (dragPlaceholder && dragPlaceholder.parentNode) {
+                        dragPlaceholder.remove();
+                    }
+                    debouncedSave();
+                }
+            }
+            
+            // Event listeners para os botões principais
+            addBlockButton.addEventListener('click', () => {
+                const newBlock = createBlock();
+                newBlock.querySelector('textarea').focus();
+                debouncedSave();
+            });
+            
+            clearAllButton.addEventListener('click', () => {
+                if (confirm('Tem certeza que deseja limpar todo o artigo?')) {
+                    blocksContainer.innerHTML = '';
+                    createBlock('');
+                    debouncedSave();
+                }
+            });
+            
+            saveManualButton.addEventListener('click', saveBlocks);
+            
+            // Função para mostrar o texto completo
+            function showFullText() {
+                // Coletar texto de todos os blocos
+                let fullText = '';
+                const textareas = document.querySelectorAll('.block textarea');
+                
+                textareas.forEach((textarea, index) => {
+                    if (textarea.value.trim() !== '') {
+                        // Adicionar o texto do bloco
+                        fullText += textarea.value;
+                        
+                        // Adicionar quebra de linha se não for o último bloco e não terminar com quebra
+                        if (index < textareas.length - 1 && !textarea.value.endsWith('\n')) {
+                            fullText += '\n\n';
+                        }
+                    }
+                });
+                
+                // Exibir o texto na modal
+                textPreviewText.textContent = fullText;
+                textPreviewModal.classList.add('visible');
+            }
+            
+            // Função para fechar a modal
+            function closePreviewModal() {
+                textPreviewModal.classList.remove('visible');
+            }
+            
+            // Função para copiar o texto para a área de transferência
+            function copyTextToClipboard() {
+                const text = textPreviewText.textContent;
+                navigator.clipboard.writeText(text)
+                    .then(() => {
+                        // Feedback visual para o usuário
+                        const originalText = copyTextBtn.textContent;
+                        copyTextBtn.textContent = 'Copiado!';
+                        setTimeout(() => {
+                            copyTextBtn.textContent = originalText;
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('Erro ao copiar texto: ', err);
+                        alert('Não foi possível copiar o texto. Por favor, tente novamente.');
+                    });
+            }
+            
+            // Event listeners para botões da modal
+            viewTextButton.addEventListener('click', showFullText);
+            closePreviewBtn.addEventListener('click', closePreviewModal);
+            textPreviewCloseBtn.addEventListener('click', closePreviewModal);
+            copyTextBtn.addEventListener('click', copyTextToClipboard);
+            
+            // Fechar modal ao clicar fora
+            textPreviewModal.addEventListener('click', function(e) {
+                if (e.target === textPreviewModal) {
+                    closePreviewModal();
+                }
+            });
+            
+            // Fechar modal com tecla ESC
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && textPreviewModal.classList.contains('visible')) {
+                    closePreviewModal();
+                }
+            });
+            
+            // Inicializar o editor
+            loadBlocks();
+            
+            // Adicionar listener para salvar quando a página for fechada
+            window.addEventListener('beforeunload', saveBlocks);
+        });
+    </script>
+</body>
+</html>
